@@ -1,6 +1,8 @@
 from music21 import *
 
 def getAllChords(measure, chordList, count):
+    #takes in a measure, list and count
+    #gets all chords in the measure and updates the list and count
     
     for chord in measure.recurse().getElementsByClass('Chord'):
         chordList.append(chord)
@@ -11,6 +13,9 @@ def getAllChords(measure, chordList, count):
     return chordList,count
 
 def getHarmonicTrack(trackList):
+    #takes in a list of tracks streams and returns the track
+    #with the most chords over 3 pitches
+    
     trackDict = {"Track": [], "Count": []}
     
     for i in range(len(trackList)):
@@ -23,16 +28,11 @@ def getHarmonicTrack(trackList):
             
         trackDict["Track"].append(chordList)
         trackDict["Count"].append(count)
-        
-    #for x in range(len(trackDict["Track"])):
-    #    count = 0
-    #    for y in range(len(trackDict["Track"][x])):
-    #        if len(trackDict["Track"][x][y].pitches) >= 3:
-    #            count += 1
-    #            
-    #    trackDict["Count"][x] = count
     
     return trackDict["Track"][trackDict["Count"].index(max(trackDict["Count"]))]
+
+#code taken from https://www.kaggle.com/code/wfaria/midi-music-data-extraction-using-music21
+#then adapted by Jacob Reed
 
 def open_midi(midi_path, remove_drums):
     # There is an one-line method to read MIDIs
@@ -56,6 +56,8 @@ def open_midi(midi_path, remove_drums):
     return getHarmonicTrack(trackList)
 
 def getKey(midi_path):
+    #takes in midi file and outputs the key
+    
     mf = midi.MidiFile()
     mf.open(midi_path)
     mf.read()
@@ -72,6 +74,11 @@ def getKey(midi_path):
     return songKey
 
 def cleanChords(chordListIn):
+    #takes in a list of chords and cleans them by doing the following:
+    #removes chords shorter than three notes
+    #removes consecutive duplicates
+    #respells chords so that all notes are diatonic
+
     list = []
     returnList = []
     
@@ -95,6 +102,8 @@ def cleanChords(chordListIn):
     return returnList
 
 def removeInversion(tempChord):
+    #removes all numbers from a chord
+    
     if "2" in tempChord:
         tempChord = tempChord.replace("2", "")
             
@@ -111,6 +120,8 @@ def removeInversion(tempChord):
         tempChord = tempChord.replace("6", "")
           
     return tempChord
+
+# code taken from https://www.kaggle.com/code/wfaria/midi-music-data-extraction-using-music21
 
 def simplify_roman_name(roman_numeral):
     # Chords can get nasty names as "bII#86#6#5",
@@ -134,7 +145,11 @@ def simplify_roman_name(roman_numeral):
     elif (roman_numeral.isDiminishedSeventh()): ret = ret + "o7"
     return ret
 
+#code written by Jacob Reed
+
 def getHarmony(chords, key):
+    #returns roman numerals for chords, and given key
+    
     chordList = []
     
     chords = cleanChords(chords)
@@ -146,22 +161,18 @@ def getHarmony(chords, key):
         if chordAdd != chord1:
             chordList.append(chordAdd)
         chord1 = chordAdd
-      
-    #returnList = []
-    #chord1 = None
-    #for x in chordList:
-    #    if x != chord1:
-    #        returnList.append(x)
-    #    chord1 = x
+
     return chordList  
 
-def check_for_repetition(chords):
+def checkForRepetition(chords):
+    #checks to see if there is repetition in a list
     for i in range(len(chords)):
         if chords[i] > 1:
             return True
     return False
 
-def find_common_progressions(chordDict):
+def findCommonProgressions(chordDict):
+    #gets the chords associated 
     keyList = []
     chordsList = []
     
@@ -174,7 +185,8 @@ def find_common_progressions(chordDict):
             
     return chordsList
 
-def check_for_progressions(chords):
+def checkForProgressions(chords):
+    #returns the found chord progression from a list of chords
 
     chordDict = {"Progression": [], "Number": []};
     chordDict["Number"].append(2)
@@ -187,7 +199,7 @@ def check_for_progressions(chords):
     count = 0
     progression = ""
         
-    while(check_for_repetition(DictList[count]["Number"])):
+    while(checkForRepetition(DictList[count]["Number"])):
         count = count + 1
         for i in range(len(chords)-count):
             for x in range(count):
@@ -204,11 +216,4 @@ def check_for_progressions(chords):
                 DictList[count]["Number"].append(1)
                 progression = ""
             
-    return find_common_progressions(DictList[count-1])
-
-
-#print(cleanChords(open_midi("lmd/lmd_aligned/W/O/L/TRWOLRE128F427D710/03b77bd9334f18bddff53535fe6ca953.mid", True)))
-chords = getHarmony(open_midi("TestMidis/NoSurprisesFull.mid", True), getKey("TestMidis/NoSurprisesFull.mid"))
-#print(chords)
- 
-print(check_for_progressions(chords))
+    return findCommonProgressions(DictList[count-1])
